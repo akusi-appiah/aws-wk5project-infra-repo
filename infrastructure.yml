@@ -291,8 +291,7 @@ Resources:
         - ContainerName: !Ref ECSAppName
           ContainerPort: !Ref ContainerPort
           TargetGroupArn: !Ref BlueTg
-      Role: !GetAtt CodeDeployServiceRole.Arn
-
+      
 
     # -- Application Auto Scaling Role --
   ApplicationAutoscalingRole:
