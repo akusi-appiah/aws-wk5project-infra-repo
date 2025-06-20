@@ -355,7 +355,7 @@ Resources:
             Principal: { Service: codedeploy.amazonaws.com }
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECSLimited
+        - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
 
   CodeDeployApplication:
     Type: AWS::CodeDeploy::Application
