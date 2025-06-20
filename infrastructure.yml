@@ -4,7 +4,9 @@ Transform: AWS::CodeDeployBlueGreen
 Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green deploy via CodePipeline.'
 
 Parameters:
-  VpcCidr: { Type: String, Default: '10.0.0.0/16' }
+  VpcCidr:  
+    Type: String
+    Default: '10.0.0.0/16' 
   PublicSubnetCIDRs:  
     Type: List<String>
     Default: 
@@ -20,10 +22,18 @@ Parameters:
     Default: 
       - 'eu-west-1a'
       - 'eu-west-1b' 
-  ECRRepoName: { Type: String, Default: 'igallery-repo' }
-  ECSAppName: { Type: String, Default: 'igallery-app' }
-  ContainerPort: { Type: Number, Default: '3000' }
-  DesiredCount: { Type: Number, Default: '2' }
+  ECRRepoName: 
+    Type: String
+    Default: 'igallery-repo' 
+  ECSAppName:
+    Type: String
+    Default: 'igallery-app' 
+  ContainerPort: 
+    Type: Number
+    Default: '3000' 
+  DesiredCount: 
+    Type: Number
+    Default: '2'
 
 Resources:
   # --- Networking ---
