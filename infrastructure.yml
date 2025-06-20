@@ -10,8 +10,8 @@ Parameters:
   AvailabilityZones: { Type: List<String>, Default: 'eu-west-1a','eu-west-1b' }
   ECRRepoName: { Type: String, Default: 'igallery-repo' }
   ECSAppName: { Type: String, Default: 'igallery-app' }
-  ContainerPort: { Type: Number, Default: 3000 }
-  DesiredCount: { Type: Number, Default: 2 }
+  ContainerPort: { Type: Number, Default: '3000' }
+  DesiredCount: { Type: Number, Default: '2' }
 
 Resources:
   # --- Networking ---
