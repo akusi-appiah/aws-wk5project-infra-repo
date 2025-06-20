@@ -30,9 +30,7 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub
-                  - repo:${Repo}:ref:refs/heads/main
-                  - { Repo: !Ref GitHubRepo }
+                token.actions.githubusercontent.com:sub: repo:akusi-appiah/aws-wk5project-infra-repo:ref:refs/heads/main
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
         - arn:aws:iam::aws:policy/AmazonEC2FullAccess
