@@ -44,16 +44,16 @@ Resources:
   # Subnets
   PublicSubnet1:
     Type: AWS::EC2::Subnet
-    Properties: { VpcId: !Ref VPC, CidrBlock: !Select [0, !Ref PublicSubnetCIDRs], AvailabilityZone: !Select [0, !Ref AvailabilityZones], MapPublicIpOnLaunch: true, Tags: [{ Key: Name, Value: public-a }] }
+    Properties: { VpcId: !Ref VPC, CidrBlock: !Select [0, !Ref PublicSubnetCIDRs], AvailabilityZone: !Select [0, !Ref AvailabilityZones], MapPublicIpOnLaunch: true, Tags: [{ Key: Name, Value: public-subnet-a }] }
   PublicSubnet2:
     Type: AWS::EC2::Subnet
-    Properties: { VpcId: !Ref VPC, CidrBlock: !Select [1, !Ref PublicSubnetCIDRs], AvailabilityZone: !Select [1, !Ref AvailabilityZones], MapPublicIpOnLaunch: true, Tags: [{ Key: Name, Value: public-b }] }
+    Properties: { VpcId: !Ref VPC, CidrBlock: !Select [1, !Ref PublicSubnetCIDRs], AvailabilityZone: !Select [1, !Ref AvailabilityZones], MapPublicIpOnLaunch: true, Tags: [{ Key: Name, Value: public-subnet-b }] }
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
-    Properties: { VpcId: !Ref VPC, CidrBlock: !Select [0, !Ref PrivateSubnetCIDRs], AvailabilityZone: !Select [0, !Ref AvailabilityZones], Tags: [{ Key: Name, Value: private-a }] }
+    Properties: { VpcId: !Ref VPC, CidrBlock: !Select [0, !Ref PrivateSubnetCIDRs], AvailabilityZone: !Select [0, !Ref AvailabilityZones], Tags: [{ Key: Name, Value: private-subnet-a }] }
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
-    Properties: { VpcId: !Ref VPC, CidrBlock: !Select [1, !Ref PrivateSubnetCIDRs], AvailabilityZone: !Select [1, !Ref AvailabilityZones], Tags: [{ Key: Name, Value: private-b }] }
+    Properties: { VpcId: !Ref VPC, CidrBlock: !Select [1, !Ref PrivateSubnetCIDRs], AvailabilityZone: !Select [1, !Ref AvailabilityZones], Tags: [{ Key: Name, Value: private-subnet-b }] }
 
   PublicSubnet1RTA: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref PublicSubnet1, RouteTableId: !Ref PublicRT } }
   PublicSubnet2RTA: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref PublicSubnet2, RouteTableId: !Ref PublicRT } }
@@ -127,9 +127,13 @@ Resources:
       GroupDescription: ALB SG
       VpcId: !Ref VPC
       SecurityGroupIngress:
-        - IpProtocol: tcp; FromPort: 80; ToPort: 80; CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
-        - IpProtocol: -1; CidrIp: 0.0.0.0/0
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
 
   taskSG:
     Type: AWS::EC2::SecurityGroup
@@ -137,9 +141,13 @@ Resources:
       GroupDescription: ECS Tasks SG
       VpcId: !Ref VPC
       SecurityGroupIngress:
-        - IpProtocol: tcp; FromPort: !Ref ContainerPort; ToPort: !Ref ContainerPort; SourceSecurityGroupId: !Ref AlbSG
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          SourceSecurityGroupId: !Ref AlbSG
       SecurityGroupEgress:
-        - IpProtocol: -1; CidrIp: 0.0.0.0/0
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
 
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
