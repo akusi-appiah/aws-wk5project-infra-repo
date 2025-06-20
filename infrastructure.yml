@@ -6,34 +6,34 @@ Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green d
 Parameters:
   VpcCidr:  
     Type: String
-    Default: "10.0.0.0/16" 
-  PublicSubnetCIDRs:  
+    Default: "10.0.0.0/16"
+  PublicSubnetCIDRs:
     Type: List<String>
-    Default: 
+    Default:
       - "10.0.1.0/24"
-      - "10.0.2.0/24" 
+      - "10.0.2.0/24"
   PrivateSubnetCIDRs:
     Type: List<String>
-    Default: 
+    Default:
       - "10.0.101.0/24"
       - "10.0.102.0/24"
   AvailabilityZones:
     Type: List<String>
     Default: 
       - "eu-west-1a"
-      - "eu-west-1b" 
-  ECRRepoName: 
+      - "eu-west-1b"
+  ECRRepoName:
     Type: String
-    Default: "igallery-repo" 
+    Default: "igallery-repo"
   ECSAppName:
     Type: String
-    Default: "igallery-app" 
+    Default: "igallery-app"
   ContainerPort: 
     Type: Number
-    Default: "3000" 
-  DesiredCount: 
+    Default: 3000
+  DesiredCount:
     Type: Number
-    Default: "2"
+    Default: 2
 
 Resources:
   # --- Networking ---
