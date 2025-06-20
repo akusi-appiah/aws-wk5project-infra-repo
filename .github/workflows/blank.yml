@@ -1,0 +1,32 @@
+name: Setup OIDC for GitHub Actions
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-oidc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: <ARN of an existing bootstrap role>  # optionally needed for first setup
+          aws-region: eu-west-1
+
+      - name: Deploy OIDC CFN stack
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: oidc-setup
+          template: oidc-setup.yml
+          parameters: |
+            GitHubRepo=${{ github.repository }}
+          capabilities: CAPABILITY_NAMED_IAM
+          no-fail-on-empty-changeset: true
+
