@@ -18,7 +18,7 @@ Resources:
   GitHubActionsRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub gitHubActions-${GitHubRepo//\//-}
+      RoleName: !Sub GitHubActions-${GitHubRepo}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:

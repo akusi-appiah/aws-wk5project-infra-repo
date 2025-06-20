@@ -17,7 +17,7 @@ jobs:
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: <ARN of an existing bootstrap role>  # optionally needed for first setup
+          role-to-assume: arn:aws:iam::796973518232:role/gitHubActions-aws-wk5project-infra-repo
           aws-region: eu-west-1
 
       - name: Deploy OIDC CFN stack
