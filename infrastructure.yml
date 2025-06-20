@@ -222,7 +222,7 @@ Resources:
       AccessControl: Private
       VersioningConfiguration:
         Status: Enabled
-      DeletionPolicy: Delete
+    DeletionPolicy: Delete
 
   # ECS Cluster & Task
   ECSCluster: { Type: AWS::ECS::Cluster }
