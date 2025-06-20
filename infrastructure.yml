@@ -187,6 +187,16 @@ Resources:
               - TargetGroupArn: !Ref GreenTg
                 Weight: 0
 
+  # S3 Bucket for Image Storage
+  AppS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: wk5lab1imagesbucket025
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      DeletionPolicy: Delete
+
   # ECS Cluster & Task
   ECSCluster: { Type: AWS::ECS::Cluster }
 
@@ -210,9 +220,10 @@ Resources:
                   - s3:PutObject
                   - s3:GetObject
                   - s3:ListBucket
+                  - s3:DeleteObject
                 Resource:
-                  - !Sub arn:aws:s3:::${BUCKET}
-                  - !Sub arn:aws:s3:::${BUCKET}/uploads/*
+                  - !Sub arn:aws:s3:::wk5lab1imagesbucket025
+                  - !Sub arn:aws:s3:::wk5lab1imagesbucket025/*
 
   ECSTaskDef:
     Type: AWS::ECS::TaskDefinition
@@ -414,3 +425,9 @@ Outputs:
   PublicSubnets: { Value: !Join [ ',', [!Ref PublicSubnet1, !Ref PublicSubnet2] ] }
   PrivateSubnets: { Value: !Join [ ',', [!Ref PrivateSubnet1, !Ref PrivateSubnet2] ] }
   LoadBalancerDNS: { Value: !GetAtt ALB.DNSName }
+  S3BucketName:
+    Description: Name of the application images bucket
+    Value: !Ref AppS3Bucket
+  S3BucketArn:
+    Description: ARN of the application images bucket
+    Value: !GetAtt AppS3Bucket.Arn
