@@ -31,6 +31,10 @@ Parameters:
   DesiredCount:
     Type: Number
     Default: 2
+  ContainerImage:
+    Type: String
+    Default: "amazon/amazon-ecs-sample:latest"
+    Description: "ECR image URI to deploy (overridden after pushing app image)"
 
 Resources:
   # --- Networking ---
@@ -269,7 +273,7 @@ Resources:
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: !Ref ECSAppName
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:latest"
+          Image: !Ref ContainerImage
           PortMappings:
             - ContainerPort: !Ref ContainerPort
           LogConfiguration:
