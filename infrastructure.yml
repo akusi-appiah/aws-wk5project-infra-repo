@@ -7,7 +7,7 @@ Parameters:
 #Conditional deployment flag
   DeployApp:
     Type: String
-    Default: "true"
+    Default: "false"
     AllowedValues: [ "true", "false" ]
     Description: |
       Set to "true" to deploy the application stack. Set to "false" to only create the infrastructure without deploying the app.
