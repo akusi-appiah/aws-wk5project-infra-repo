@@ -1,36 +1,82 @@
-name: Deploy Networking Stack
+name: Deploy Infra & Image
 
 on:
   push:
-    branches:  
-      - main 
-  workflow_dispatch:
+    branches: [main]
 
 permissions:
   contents: read
   id-token: write
 
-
 jobs:
-  deploy:
-    name: Deploy Image Gallery Infrastructure Networking Stack
+  deploy-core:
     runs-on: ubuntu-latest
-
+    outputs:
+      ecr_uri: ${{ steps.cf.outputs.stack-outputs }}
     steps:
-      - name: Checkout infra repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Configure AWS credentials via static keys
+      - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: eu-west-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
 
-      - name: Deploy infra stack
+      - name: Deploy core infra
+        id: cf
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
-          name: igallery-infrastructure
+          name: igallery-infra
           template: infrastructure.yml
           capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
-          no-fail-on-empty-changeset: 'true'
+          parameter-overrides: DeployApp=false
+
+  build-push-image:
+    needs: deploy-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: AWS Login
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Log in to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build & Push Placeholder
+        run: |
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/igallery-repo:latest"
+          cat > Dockerfile <<EOF
+          FROM public.ecr.aws/amazonlinux/amazonlinux:2
+          CMD ["echo","Placeholder"]
+          EOF
+          docker build -t igallery-repo:latest .
+          docker tag igallery-repo:latest "$IMAGE_URI"
+          docker push "$IMAGE_URI"
+
+  deploy-app:
+    needs: build-push-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS Login
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Deploy App Resources
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: igallery-infra
+          template: infrastructure.yml
+          capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
+          parameter-overrides: |
+            DeployApp=true
+            ContainerImage=${{ steps.login-ecr.outputs.registry }}/igallery-repo:latest

@@ -4,6 +4,22 @@ Transform: AWS::CodeDeployBlueGreen
 Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green deploy via CodePipeline.'
 
 Parameters:
+
+#Conditional deployment flag
+  DeployApp:
+    Type: String
+    Default: "true"
+    AllowedValues: [ "true", "false" ]
+    Description: |
+      Set to "true" to deploy the application stack. Set to "false" to only create the infrastructure without deploying the app.
+
+  ContainerImage:
+    Type: String
+    Default: "796973518232.dkr.ecr.eu-west-1.amazonaws.com/igallery-repo:latest"
+    Description: |
+      ECR image URI for your container. Update this to deploy a new version of your app.
+
+  # VPC and Subnet Configuration
   VpcCidr:  
     Type: String
     Default: "10.0.0.0/16"
@@ -31,12 +47,10 @@ Parameters:
   DesiredCount:
     Type: Number
     Default: 2
-  ContainerImage:
-    Type: String
-    Default: "796973518232.dkr.ecr.eu-west-1.amazonaws.com/igallery-repo:latest"
-    Description: |
-      ECR image URI for your container. Update this to deploy a new version of your app.
 
+Conditions:
+  CreateAppResources: !Equals [!Ref DeployApp, "true"]
+  
 Resources:
   # --- Networking ---
   VPC:
@@ -174,6 +188,7 @@ Resources:
           CidrIp: 0.0.0.0/0
 
   ALB:
+    condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: !Sub "${ECSAppName}-alb"
@@ -181,6 +196,7 @@ Resources:
       SecurityGroups: [ !Ref AlbSG ]
 
   BlueTg:
+    condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${ECSAppName}-blue"
@@ -193,6 +209,7 @@ Resources:
       Matcher: { HttpCode: "200" }
 
   GreenTg:
+    condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${ECSAppName}-green"
@@ -205,6 +222,7 @@ Resources:
       Matcher: { HttpCode: "200" }
 
   AlbListener:
+    condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ALB
@@ -230,7 +248,9 @@ Resources:
     DeletionPolicy: Delete
 
   # ECS Cluster & Task
-  ECSCluster: { Type: AWS::ECS::Cluster }
+  ECSCluster:  
+    Condition: CreateAppResources
+    Type: AWS::ECS::Cluster 
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -264,6 +284,7 @@ Resources:
                 Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/${ECSAppName}:*"
 
   ECSTaskDef:
+    Condition: CreateAppResources
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref ECSAppName
@@ -272,9 +293,11 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities: [FARGATE]
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
-        - Name: !Ref ECSAppName
+        - Name: igallery-container
           Image: !Ref ContainerImage
+          Essential: true
           PortMappings:
             - ContainerPort: !Ref ContainerPort
               Protocol: tcp
@@ -287,6 +310,7 @@ Resources:
               awslogs-stream-prefix: ecs
 
   ECSService:
+    Condition: CreateAppResources
     Type: AWS::ECS::Service
     DependsOn: AlbListener
     Properties:
@@ -304,6 +328,9 @@ Resources:
         - ContainerName: !Ref ECSAppName
           ContainerPort: !Ref ContainerPort
           TargetGroupArn: !Ref BlueTg
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
       
 
     # -- Application Auto Scaling Role --
@@ -370,6 +397,7 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
 
   CodeDeployApplication:
+    Condition: CreateAppResources
     Type: AWS::CodeDeploy::Application
     Properties: { ComputePlatform: ECS, ApplicationName: !Ref ECSAppName }
 
