@@ -444,11 +444,12 @@ Resources:
         DeploymentReadyOption:
           ActionOnTimeout: CONTINUE_DEPLOYMENT
       LoadBalancerInfo:
-        TargetGroupPairInfo:
-          ProdTrafficRoute: { ListenerArns: [!Ref AlbListener] }
-          TargetGroups:
-            - Name: !GetAtt BlueTg.TargetGroupFullName
-            - Name: !GetAtt GreenTg.TargetGroupFullName
+        TargetGroupPairInfoList:
+          - ProdTrafficRoute:  
+              ListenerArns: [!Ref AlbListener] 
+            TargetGroups:
+              - Name: !GetAtt BlueTg.TargetGroupFullName
+              - Name: !GetAtt GreenTg.TargetGroupFullName
       ECSServices:
         ClusterName: !Ref ECSCluster
         ServiceName: !Ref ECSService
