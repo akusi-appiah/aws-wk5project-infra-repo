@@ -1,6 +1,5 @@
 # This CloudFormation template sets up a full infrastructure stack for an application using AWS services.
 AWSTemplateFormatVersion: '2010-09-09'
-# Transform: AWS::CodeDeployBlueGreen
 Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green deploy via CodePipeline.'
 
 Parameters:
@@ -14,7 +13,7 @@ Parameters:
 
   ContainerImage:
     Type: String
-    Default: "796973518232.dkr.ecr.eu-west-1.amazonaws.com/igallery-repo:latest"
+    Default: "796973518232.dkr.ecr.eu-central-1.amazonaws.com/igallery-repo:latest"
     Description: |
       ECR image URI for your container. Update this to deploy a new version of your app.
 
@@ -32,7 +31,7 @@ Parameters:
 
   AvailabilityZones:
     Type: List<String>
-    Default: "eu-west-1a,eu-west-1b"
+    Default: "eu-central-1a,eu-central-1b"
 
   ECRRepoName:
     Type: String
