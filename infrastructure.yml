@@ -452,8 +452,8 @@ Resources:
               - Name: !GetAtt BlueTg.TargetGroupFullName
               - Name: !GetAtt GreenTg.TargetGroupFullName
       ECSServices:
-        ClusterName: !Ref ECSCluster
-        ServiceName: !Ref ECSService
+        - ClusterName: !Ref ECSCluster
+          ServiceName: !Ref ECSService
 
   ArtifactsBucket:
     Type: AWS::S3::Bucket
