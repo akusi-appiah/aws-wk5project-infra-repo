@@ -31,10 +31,11 @@ Parameters:
   DesiredCount:
     Type: Number
     Default: 2
-  # ContainerImage:
-  #   Type: String
-  #   Default: "amazon/amazon-ecs-sample:latest"
-  #   Description: "ECR image URI to deploy (overridden after pushing app image)"
+  ContainerImage:
+    Type: String
+    Default: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/igallery-repo:latest"
+    Description: |
+      ECR image URI for your container. Update this to deploy a new version of your app.
 
 Resources:
   # --- Networking ---
@@ -273,14 +274,15 @@ Resources:
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: !Ref ECSAppName
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/igallery-repo:latest"
+          Image: !Ref ContainerImage
           PortMappings:
             - ContainerPort: !Ref ContainerPort
+              Protocol: tcp
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-create-group: "true"
-              awslogs-group: !Sub "/ecs/${ECSAppName}"
+              awslogs-group:  !Ref AppLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
 
