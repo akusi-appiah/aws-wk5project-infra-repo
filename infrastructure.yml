@@ -486,6 +486,7 @@ Resources:
                 Resource: '*'
 
   Pipeline:
+    Condition: CreateAppResources
     Type: AWS::CodePipeline::Pipeline
     Properties:
       RoleArn: !GetAtt PipelineRole.Arn
