@@ -276,6 +276,7 @@ Resources:
   ECSCluster:  
     Condition: CreateAppResources
     Type: AWS::ECS::Cluster 
+    ClusterName: !Ref ECSAppName-cluster
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -340,7 +341,7 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn: AlbListener
     Properties:
-      ServiceName: !GetAtt ECSService.Name
+      ServiceName: !Ref ECSAppName-service
       Cluster: !Ref ECSCluster
       DesiredCount: !Ref DesiredCount
       LaunchType: FARGATE
@@ -393,7 +394,7 @@ Resources:
       ScalableDimension: ecs:service:DesiredCount
       ResourceId: !Join 
         - "/"
-        - [ "service", !Ref ECSCluster, !GetAtt ECSService.Name ]
+        - [ "service", !Ref ECSCluster, !Ref ECSAppName-service ]
       RoleARN: !GetAtt ApplicationAutoscalingRole.Arn
       MinCapacity: 1
       MaxCapacity: 10
@@ -454,7 +455,7 @@ Resources:
               - Name: !GetAtt GreenTg.TargetGroupFullName
       ECSServices:
         - ClusterName: !Ref ECSCluster
-          ServiceName: !GetAtt ECSService.Name 
+          ServiceName: !Ref ECSAppName-service 
 
   ArtifactsBucket:
     Type: AWS::S3::Bucket
@@ -555,8 +556,4 @@ Outputs:
     Description: "ECS Cluster name"
     Value: !Ref ECSCluster
 
-  DebugServiceName:
-    Condition: CreateAppResources
-    Description: "ECS Service name (expected just the service name)"
-    Value: !GetAtt ECSService.Name
   
