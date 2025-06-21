@@ -183,6 +183,7 @@ Resources:
 
   # ALB & Security Groups
   AlbSG:
+    Condition: CreateAppResources
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ALB SG
@@ -197,6 +198,7 @@ Resources:
           CidrIp: 0.0.0.0/0
 
   taskSG:
+    Condition: CreateAppResources
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ECS Tasks SG
@@ -454,6 +456,7 @@ Resources:
       AccessControl: Private
   
   AppLogGroup:
+    Condition: CreateAppResources
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/ecs/${ECSAppName}"
