@@ -275,7 +275,9 @@ Resources:
   # ECS Cluster & Task
   ECSCluster:  
     Condition: CreateAppResources
-    Type: AWS::ECS::Cluster 
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: igallery-app-cluster
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -340,7 +342,7 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn: AlbListener
     Properties:
-      ServiceName: !Sub "${ECSAppName}-service"
+      ServiceName: igallery-app-service
       Cluster: !Ref ECSCluster
       DesiredCount: !Ref DesiredCount
       LaunchType: FARGATE
@@ -391,9 +393,7 @@ Resources:
     Properties:
       ServiceNamespace: ecs
       ScalableDimension: ecs:service:DesiredCount
-      ResourceId: !Join 
-        - "/"
-        - [ "service", !Ref ECSCluster, !Sub "${ECSAppName}-service"]
+      ResourceId: !Join ["/", ["service", !Ref ECSCluster, !GetAtt ECSService.Name]] 
       RoleARN: !GetAtt ApplicationAutoscalingRole.Arn
       MinCapacity: 1
       MaxCapacity: 10
@@ -454,7 +454,7 @@ Resources:
               - Name: !GetAtt GreenTg.TargetGroupFullName
       ECSServices:
         - ClusterName: !Ref ECSCluster
-          ServiceName: !Sub "${ECSAppName}-service"
+          ServiceName: !GetAtt ECSService.Name
 
   ArtifactsBucket:
     Type: AWS::S3::Bucket
@@ -546,9 +546,6 @@ Outputs:
   ECRRepositoryUri:
     Description: URI of the ECR repository
     Value: !GetAtt ECRRepository.RepositoryUri
-  DebugAutoscalingResourceId:
-    Condition: CreateAppResources
-    Value: !Sub "service/${ECSCluster}/${ECSService}"
 
   DebugClusterName:
     Condition: CreateAppResources
