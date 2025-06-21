@@ -90,5 +90,5 @@ jobs:
           template: infrastructure.yml
           capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
           parameter-overrides: |
-            DeployApp=true
+            DeployApp="true"
             ContainerImage=$${{ needs.deploy-core.outputs.ecr_uri }}:latest
