@@ -42,7 +42,7 @@ Parameters:
     Default: "igallery-app"
   ContainerPort: 
     Type: Number
-    Default: 3000
+    Default: 80
   DesiredCount:
     Type: Number
     Default: 2

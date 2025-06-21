@@ -58,8 +58,8 @@ jobs:
         run: |
           IMAGE_URI="${{ needs.deploy-core.outputs.ecr_uri }}:latest"
           cat > Dockerfile <<EOF
-          FROM public.ecr.aws/amazonlinux/amazonlinux:2
-          CMD ["echo","Placeholder"]
+          FROM nginx:alpine
+          RUN echo '<h1>Hello World</h1>' > /usr/share/nginx/html/index.html
           EOF
           docker build -t igallery-repo:latest .
           docker tag igallery-repo:latest "$IMAGE_URI"
