@@ -12,7 +12,7 @@ jobs:
   deploy-core:
     runs-on: ubuntu-latest
     outputs:
-      ecr_uri: ${{ steps.cf.outputs.stack-outputs }}
+      ecr_uri: ${{ steps.cf.outputs.ECRRepositoryUri }}
     steps:
       - uses: actions/checkout@v3
 
@@ -51,7 +51,7 @@ jobs:
 
       - name: Build & Push Placeholder
         run: |
-          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/igallery-repo:latest"
+          IMAGE_URI="${{ needs.deploy-core.outputs.ecr_uri }}:latest"
           cat > Dockerfile <<EOF
           FROM public.ecr.aws/amazonlinux/amazonlinux:2
           CMD ["echo","Placeholder"]
@@ -61,7 +61,7 @@ jobs:
           docker push "$IMAGE_URI"
 
   deploy-app:
-    needs: build-push-image
+    needs: [deploy-core, build-push-image]
     runs-on: ubuntu-latest
     steps:
       - name: AWS Login
@@ -79,4 +79,4 @@ jobs:
           capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
           parameter-overrides: |
             DeployApp=true
-            ContainerImage=${{ steps.login-ecr.outputs.registry }}/igallery-repo:latest
+            ContainerImage=$${{ needs.deploy-core.outputs.ecr_uri }}:latest

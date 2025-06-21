@@ -1,10 +1,9 @@
 # This CloudFormation template sets up a full infrastructure stack for an application using AWS services.
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::CodeDeployBlueGreen
+# Transform: AWS::CodeDeployBlueGreen
 Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green deploy via CodePipeline.'
 
 Parameters:
-
 #Conditional deployment flag
   DeployApp:
     Type: String
@@ -47,6 +46,9 @@ Parameters:
   DesiredCount:
     Type: Number
     Default: 2
+  S3BucketName:
+    Type: String
+    Default: "wk5lab1imagesbucket025"
 
 Conditions:
   CreateAppResources: !Equals [!Ref DeployApp, "true"]
@@ -79,6 +81,15 @@ Resources:
       DestinationCidrBlock: "0.0.0.0/0"
       GatewayId: !Ref InternetGateway
 
+  # Add Private Route Table and Associations
+  PrivateRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: private-rt
+
   # Subnets
   PublicSubnet1:
     Type: AWS::EC2::Subnet
@@ -95,6 +106,18 @@ Resources:
 
   PublicSubnet1RTA: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref PublicSubnet1, RouteTableId: !Ref PublicRT } }
   PublicSubnet2RTA: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref PublicSubnet2, RouteTableId: !Ref PublicRT } }
+
+  PrivateSubnet1RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRT
+
+  PrivateSubnet2RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRT
 
   # VPC Endpoints
   EndpointSG:
@@ -113,7 +136,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
-      RouteTableIds: [ !Ref PublicRT ]
+      RouteTableIds: [ !Ref PrivateRT ]
       VpcEndpointType: Gateway
       PolicyDocument:
         Statement: [{ Action: "s3:*", Effect: Allow, Principal: "*", Resource: "*" }]
@@ -241,7 +264,7 @@ Resources:
   AppS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: wk5lab1imagesbucket025
+      BucketName: !Ref S3BucketName
       AccessControl: Private
       VersioningConfiguration:
         Status: Enabled
@@ -274,8 +297,8 @@ Resources:
                   - s3:ListBucket
                   - s3:DeleteObject
                 Resource:
-                  - !Sub arn:aws:s3:::wk5lab1imagesbucket025
-                  - !Sub arn:aws:s3:::wk5lab1imagesbucket025/*
+                  - !Sub arn:aws:s3:::${S3BucketName}
+                  - !Sub arn:aws:s3:::${S3BucketName}/*
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -286,6 +309,7 @@ Resources:
   ECSTaskDef:
     Condition: CreateAppResources
     Type: AWS::ECS::TaskDefinition
+    DependsOn: AppLogGroup
     Properties:
       Family: !Ref ECSAppName
       Cpu: '512'
@@ -478,7 +502,9 @@ Resources:
                 - Name: SourceOutput
               Configuration:
                 RepositoryName: !Ref ECRRepoName
+                ImageTag: "latest"
                 # Replace with ImageTag if desired
+
         - Name: Deploy
           Actions:
             - Name: Deploy
@@ -504,3 +530,6 @@ Outputs:
   S3BucketArn:
     Description: ARN of the application images bucket
     Value: !GetAtt AppS3Bucket.Arn
+  ECRRepositoryUri:
+    Description: URI of the ECR repository
+    Value: !GetAtt ECRRepository.RepositoryUri
