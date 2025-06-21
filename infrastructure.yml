@@ -383,6 +383,7 @@ Resources:
 
   # -- Scalable Target Resource --
   ScalableTarget:
+    Condition: CreateAppResources
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     DependsOn: ECSService
     Properties:
@@ -426,6 +427,7 @@ Resources:
     Properties: { ComputePlatform: ECS, ApplicationName: !Ref ECSAppName }
 
   CodeDeployDeploymentGroup:
+    Condition: CreateAppResources
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
       ApplicationName: !Ref CodeDeployApplication
