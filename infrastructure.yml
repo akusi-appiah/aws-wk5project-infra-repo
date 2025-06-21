@@ -33,7 +33,7 @@ Parameters:
     Default: 2
   ContainerImage:
     Type: String
-    Default: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/igallery-repo:latest"
+    Default: "796973518232.dkr.ecr.eu-west-1.amazonaws.com/igallery-repo:latest"
     Description: |
       ECR image URI for your container. Update this to deploy a new version of your app.
 
