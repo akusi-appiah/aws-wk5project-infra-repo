@@ -47,7 +47,7 @@ Parameters:
     Default: 2
   S3BucketName:
     Type: String
-    Default: "wk5lab1imagesbucket025"
+    Default: "wk5lab1imagesbucket1025"
 
 Conditions:
   CreateAppResources: !Equals [!Ref DeployApp, "true"]
