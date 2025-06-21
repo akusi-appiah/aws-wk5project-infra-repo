@@ -89,6 +89,4 @@ jobs:
           name: igallery-infra
           template: infrastructure.yml
           capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
-          parameter-overrides: |
-            DeployApp="true"
-            ContainerImage=$${{ needs.deploy-core.outputs.ecr_uri }}:latest
+          parameter-overrides: DeployApp=true,ContainerImage=${{ needs.deploy-core.outputs.ecr_uri }}:latest
