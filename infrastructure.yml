@@ -396,6 +396,7 @@ Resources:
 
   # -- Target Tracking Scaling Policy --
   ScalingPolicy:
+    Condition: CreateAppResources
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
       PolicyName: cpu-target-tracking
