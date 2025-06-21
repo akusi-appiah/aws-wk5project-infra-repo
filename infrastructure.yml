@@ -454,7 +454,7 @@ Resources:
               - Name: !GetAtt GreenTg.TargetGroupFullName
       ECSServices:
         - ClusterName: !Ref ECSCluster
-          ServiceName: !Ref ECSAppName-service 
+          ServiceName: !Sub "${ECSAppName}-service"
 
   ArtifactsBucket:
     Type: AWS::S3::Bucket
