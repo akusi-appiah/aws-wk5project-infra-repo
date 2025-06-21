@@ -440,9 +440,10 @@ Resources:
         DeploymentType: BLUE_GREEN
         DeploymentOption: WITH_TRAFFIC_CONTROL
       BlueGreenDeploymentConfiguration:
-        TerminateBlueInstancesOnDeploymentSuccess: { Action: TERMINATE, WaitTimeInMinutes: 5 }
+        TerminateBlueInstancesOnDeploymentSuccess: { Action: TERMINATE, TerminationWaitTimeInMinutes: 5 }
         DeploymentReadyOption:
           ActionOnTimeout: CONTINUE_DEPLOYMENT
+          WaitTimeInMinutes: 5    
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - ProdTrafficRoute:  
