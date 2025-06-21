@@ -188,7 +188,7 @@ Resources:
           CidrIp: 0.0.0.0/0
 
   ALB:
-    condition: CreateAppResources
+    Condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: !Sub "${ECSAppName}-alb"
@@ -196,7 +196,7 @@ Resources:
       SecurityGroups: [ !Ref AlbSG ]
 
   BlueTg:
-    condition: CreateAppResources
+    Condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${ECSAppName}-blue"
@@ -209,7 +209,7 @@ Resources:
       Matcher: { HttpCode: "200" }
 
   GreenTg:
-    condition: CreateAppResources
+    Condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${ECSAppName}-green"
@@ -222,7 +222,7 @@ Resources:
       Matcher: { HttpCode: "200" }
 
   AlbListener:
-    condition: CreateAppResources
+    Condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ALB
