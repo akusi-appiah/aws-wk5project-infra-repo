@@ -393,7 +393,7 @@ Resources:
       ScalableDimension: ecs:service:DesiredCount
       ResourceId: !Join 
         - "/"
-        - [ "service", !Ref ECSCluster, !Ref ECSAppName-service ]
+        - [ "service", !Ref ECSCluster, !Sub "${ECSAppName}-service"]
       RoleARN: !GetAtt ApplicationAutoscalingRole.Arn
       MinCapacity: 1
       MaxCapacity: 10
