@@ -340,7 +340,7 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn: AlbListener
     Properties:
-      ServiceName: !Ref ECSAppName-service
+      ServiceName: !Sub "${ECSAppName}-service"
       Cluster: !Ref ECSCluster
       DesiredCount: !Ref DesiredCount
       LaunchType: FARGATE
