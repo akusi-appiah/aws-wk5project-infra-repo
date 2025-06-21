@@ -356,8 +356,7 @@ Resources:
           TargetGroupArn: !Ref BlueTg
       DeploymentConfiguration:
         MaximumPercent: 200
-        MinimumHealthyPercent: 50
-      
+        MinimumHealthyPercent: 50   
 
     # -- Application Auto Scaling Role --
   ApplicationAutoscalingRole:
@@ -391,7 +390,11 @@ Resources:
     Properties:
       ServiceNamespace: ecs
       ScalableDimension: ecs:service:DesiredCount
-      ResourceId: !Sub "service/${ECSCluster}/${ECSService}"
+      ResourceId: !Join 
+        - "/"
+        - - "service"
+        - !Ref ECSCluster
+        - !GetAtt ECSService.Name
       RoleARN: !GetAtt ApplicationAutoscalingRole.Arn
       MinCapacity: 1
       MaxCapacity: 10
@@ -448,7 +451,9 @@ Resources:
           TargetGroups:
             - Name: !GetAtt BlueTg.TargetGroupFullName
             - Name: !GetAtt GreenTg.TargetGroupFullName
-      ECSService: !Ref ECSService
+      ECSServices:
+        ClusterName: !Ref ECSCluster
+        ServiceName: !Ref ECSService
 
   ArtifactsBucket:
     Type: AWS::S3::Bucket
@@ -540,3 +545,9 @@ Outputs:
   ECRRepositoryUri:
     Description: URI of the ECR repository
     Value: !GetAtt ECRRepository.RepositoryUri
+  DebugAutoscalingResourceId:
+    Condition: CreateAppResources
+    Value: !Sub "service/${ECSCluster}/${ECSService}"
+  ECSServiceNameOutput:
+    Description: "For debugging: ECS service name"
+    Value: !GetAtt ECSService.Name
