@@ -276,7 +276,6 @@ Resources:
   ECSCluster:  
     Condition: CreateAppResources
     Type: AWS::ECS::Cluster 
-    clusterName: !Ref ECSAppName-cluster
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
