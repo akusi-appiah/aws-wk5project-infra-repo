@@ -321,7 +321,7 @@ Resources:
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
-        - Name: igallery-container
+        - Name: !Ref ECSAppName
           Image: !Ref ContainerImage
           Essential: true
           PortMappings:
