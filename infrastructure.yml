@@ -178,7 +178,7 @@ Resources:
       RepositoryName: !Ref ECRRepoName
       ImageScanningConfiguration:
         ScanOnPush: true
-      ImageTagMutability: IMMUTABLE
+      # ImageTagMutability: IMMUTABLE
 
 
   # ALB & Security Groups
