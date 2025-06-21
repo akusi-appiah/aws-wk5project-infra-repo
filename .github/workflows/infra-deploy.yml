@@ -15,6 +15,11 @@ jobs:
       ecr_uri: ${{ steps.cf.outputs.ECRRepositoryUri }}
     steps:
       - uses: actions/checkout@v3
+      - name: Print current directory
+        run: pwd
+
+      - name: List files
+        run: ls -la
 
       - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v4
@@ -64,6 +69,12 @@ jobs:
     needs: [deploy-core, build-push-image]
     runs-on: ubuntu-latest
     steps:
+      - name: Print current directory
+        run: pwd
+
+      - name: List files
+        run: ls -la
+
       - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v4
         with:
