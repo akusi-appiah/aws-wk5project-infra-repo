@@ -136,7 +136,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
-      RouteTableIds: [ !Ref PrivateRT ]
+      RouteTableIds: [ !Ref PublicRT,!Ref PrivateRT ]
       VpcEndpointType: Gateway
       PolicyDocument:
         Statement: [{ Action: "s3:*", Effect: Allow, Principal: "*", Resource: "*" }]
@@ -340,6 +340,7 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn: AlbListener
     Properties:
+      ServiceName: !GetAtt ECSService.Name
       Cluster: !Ref ECSCluster
       DesiredCount: !Ref DesiredCount
       LaunchType: FARGATE
@@ -453,7 +454,7 @@ Resources:
               - Name: !GetAtt GreenTg.TargetGroupFullName
       ECSServices:
         - ClusterName: !Ref ECSCluster
-          ServiceName: !Ref ECSService
+          ServiceName: !GetAtt ECSService.Name 
 
   ArtifactsBucket:
     Type: AWS::S3::Bucket
@@ -548,7 +549,14 @@ Outputs:
   DebugAutoscalingResourceId:
     Condition: CreateAppResources
     Value: !Sub "service/${ECSCluster}/${ECSService}"
-  ECSServiceNameOutput:
+
+  DebugClusterName:
     Condition: CreateAppResources
-    Description: "For debugging: ECS service name"
+    Description: "ECS Cluster name"
+    Value: !Ref ECSCluster
+
+  DebugServiceName:
+    Condition: CreateAppResources
+    Description: "ECS Service name (expected just the service name)"
     Value: !GetAtt ECSService.Name
+  
