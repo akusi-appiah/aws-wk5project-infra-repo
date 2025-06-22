@@ -139,7 +139,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
-      RouteTableIds: [!Ref PrivateRT ]
+      RouteTableIds: [!Ref PublicRT, !Ref PrivateRT ]
       VpcEndpointType: Gateway
       PolicyDocument:
         Statement: [{ Action: "s3:*", Effect: Allow, Principal: "*", Resource: "*" }]
@@ -547,9 +547,6 @@ Outputs:
   S3BucketArn:
     Description: ARN of the application images bucket
     Value: !GetAtt AppS3Bucket.Arn
-  # ECRRepositoryUri:
-  #   Description: URI of the ECR repository
-  #   Value: !GetAtt ECRRepository.RepositoryUri
 
   DebugClusterName:
     Condition: CreateAppResources
