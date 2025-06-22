@@ -135,7 +135,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
-      RouteTableIds: [!Ref PublicRT,!Ref PrivateRT ]
+      RouteTableIds: [!Ref PrivateRT ]
       VpcEndpointType: Gateway
       PolicyDocument:
         Statement: [{ Action: "s3:*", Effect: Allow, Principal: "*", Resource: "*" }]
