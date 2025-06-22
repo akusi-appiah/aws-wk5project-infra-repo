@@ -12,7 +12,7 @@ jobs:
   deploy-core:
     runs-on: ubuntu-latest
     outputs:
-      bucket_name: ${{ steps.cf.outputs.BucketName }}
+      bucket_name: ${{ steps.cf.outputs.S3BucketName }}
     steps:
       - uses: actions/checkout@v4
 
