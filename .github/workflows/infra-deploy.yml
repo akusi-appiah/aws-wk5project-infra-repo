@@ -15,18 +15,13 @@ jobs:
       ecr_uri: ${{ steps.cf.outputs.ECRRepositoryUri }}
     steps:
       - uses: actions/checkout@v3
-      - name: Print current directory
-        run: pwd
-
-      - name: List files
-        run: ls -la
 
       - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
+          aws-region: eu-west-1
 
       - name: Deploy core infra
         id: cf
@@ -48,13 +43,28 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
+          aws-region: eu-west-1
 
       - name: Log in to ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Check if latest image exists
+        id: check-image
+        run: |
+          REPO_NAME=igallery-repo
+          IMAGE_TAG=latest
+          IMAGE_EXISTS=$(aws ecr describe-images --repository-name $REPO_NAME --image-ids imageTag=$IMAGE_TAG --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || echo "")
+          if [ -n "$IMAGE_EXISTS" ]; then
+            echo "Image with tag $IMAGE_TAG already exists."
+            echo "image_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Image with tag $IMAGE_TAG does not exist."
+            echo "image_exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build & Push Placeholder
+        if: steps.check-image.outputs.image_exists == 'false'
         run: |
           IMAGE_URI="${{ needs.deploy-core.outputs.ecr_uri }}:latest"
           cat > Dockerfile <<EOF
@@ -70,18 +80,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Print current directory
-        run: pwd
-
-      - name: List files
-        run: ls -la
-
       - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
+          aws-region: eu-west-1
 
       - name: Deploy App Resources
         uses: aws-actions/aws-cloudformation-github-deploy@v1
