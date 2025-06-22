@@ -11,6 +11,8 @@ permissions:
 jobs:
   deploy-core:
     runs-on: ubuntu-latest
+    outputs:
+      bucket_name: ${{ steps.cf.outputs.BucketName }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +30,7 @@ jobs:
           name: igallery-infra
           template: infrastructure.yml
           capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
-          parameter-overrides: DeployApp=false
+          parameter-overrides: DeployApp=false,BucketName=${{ needs.deploy-core.outputs.bucket_name }}
 
   build-push-image:
     needs: deploy-core

@@ -269,7 +269,7 @@ Resources:
   AppS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref S3BucketName
+      BucketName: !Sub igallery-app-bucket-${AWS::AccountId}
       AccessControl: Private
       VersioningConfiguration:
         Status: Enabled
@@ -304,8 +304,8 @@ Resources:
                   - s3:ListBucket
                   - s3:DeleteObject
                 Resource:
-                  - !Sub arn:aws:s3:::${S3BucketName}
-                  - !Sub arn:aws:s3:::${S3BucketName}/*
+                  - !Sub arn:aws:s3:::${AppS3Bucket}
+                  - !Sub arn:aws:s3:::${AppS3Bucket}/*
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -339,6 +339,9 @@ Resources:
               awslogs-group:  !Ref AppLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
+          Environment:
+            - Name: S3_BUCKET
+              Value: !Ref AppS3Bucket
 
   ECSService:
     Condition: CreateAppResources
