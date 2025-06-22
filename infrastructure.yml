@@ -36,15 +36,19 @@ Parameters:
   ECRRepoName:
     Type: String
     Default: "igallery-repo"
+
   ECSAppName:
     Type: String
     Default: "igallery-app"
+
   ContainerPort: 
     Type: Number
     Default: 80
+
   DesiredCount:
     Type: Number
     Default: 2
+
   S3BucketName:
     Type: String
     Default: "wk5lab1imagesbucket1025"
@@ -171,13 +175,13 @@ Resources:
       PrivateDnsEnabled: true
 
     # --- ECR Repository (Private by default) ---
-  ECRRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Ref ECRRepoName
-      ImageScanningConfiguration:
-        ScanOnPush: true
-      # ImageTagMutability: IMMUTABLE
+  # ECRRepository:
+  #   Type: AWS::ECR::Repository
+  #   Properties:
+  #     RepositoryName: !Ref ECRRepoName
+  #     ImageScanningConfiguration:
+  #       ScanOnPush: true
+  #     # ImageTagMutability: IMMUTABLE
 
 
   # ALB & Security Groups
@@ -543,9 +547,9 @@ Outputs:
   S3BucketArn:
     Description: ARN of the application images bucket
     Value: !GetAtt AppS3Bucket.Arn
-  ECRRepositoryUri:
-    Description: URI of the ECR repository
-    Value: !GetAtt ECRRepository.RepositoryUri
+  # ECRRepositoryUri:
+  #   Description: URI of the ECR repository
+  #   Value: !GetAtt ECRRepository.RepositoryUri
 
   DebugClusterName:
     Condition: CreateAppResources

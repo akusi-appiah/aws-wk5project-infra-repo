@@ -11,10 +11,10 @@ permissions:
 jobs:
   deploy-core:
     runs-on: ubuntu-latest
-    outputs:
-      ecr_uri: ${{ steps.cf.outputs.ECRRepositoryUri }}
+    # outputs:
+    #   ecr_uri: ${{ steps.cf.outputs.ECRRepositoryUri }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v4
@@ -36,7 +36,7 @@ jobs:
     needs: deploy-core
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v4
@@ -47,10 +47,31 @@ jobs:
 
       - name: Log in to ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Check if ECR repository exists
+        id: check-repo
+        run: |
+          REPO_NAME=igallery-repo
+          REPO_EXISTS=$(aws ecr describe-repositories --repository-names $REPO_NAME --query 'repositories[0].repositoryName' --output text 2>/dev/null || echo "")
+          if [ -n "$REPO_EXISTS" ]; then
+            echo "Repository $REPO_NAME exists."
+            echo "repo_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Repository $REPO_NAME does not exist."
+            echo "repo_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create ECR repository if it doesn't exist
+        if: steps.check-repo.outputs.repo_exists == 'false'
+        run: |
+          REPO_NAME=igallery-repo
+          aws ecr create-repository --repository-name $REPO_NAME --region eu-west-1
+
 
       - name: Check if latest image exists
         id: check-image
+        if: steps.check-repo.outputs.repo_exists == 'true'
         run: |
           REPO_NAME=igallery-repo
           IMAGE_TAG=latest
@@ -64,7 +85,7 @@ jobs:
           fi
 
       - name: Build & Push Placeholder
-        if: steps.check-image.outputs.image_exists == 'false'
+        if: steps.check-repo.outputs.repo_exists == 'false' || steps.check-image.outputs.image_exists == 'false'
         run: |
           IMAGE_URI="${{ needs.deploy-core.outputs.ecr_uri }}:latest"
           cat > Dockerfile <<EOF
@@ -79,7 +100,7 @@ jobs:
     needs: [deploy-core, build-push-image]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v4
         with:
