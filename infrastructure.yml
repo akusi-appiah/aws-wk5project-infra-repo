@@ -403,7 +403,6 @@ Resources:
       RoleARN: !GetAtt ApplicationAutoscalingRole.Arn
       MinCapacity: 1
       MaxCapacity: 10
-      DesiredCapacity: !Ref DesiredCount #confirm if we can have at least 2 running
 
   # -- Target Tracking Scaling Policy --
   ScalingPolicy:
