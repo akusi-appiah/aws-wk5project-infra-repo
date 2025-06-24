@@ -1,6 +1,6 @@
 
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green deploy via CodePipeline.'
+Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green deploy via gitHub actions.'
 
 Parameters:
 #Conditional deployment flag
@@ -458,8 +458,8 @@ Resources:
           - ProdTrafficRoute:  
               ListenerArns: [!Ref AlbListener] 
             TargetGroups:
-              - Name: !Ref BlueTg
-              - Name: !Ref GreenTg
+              - Name: !Sub "${ECSAppName}-blue"
+              - Name: !Sub "${ECSAppName}-green"
       ECSServices:
         - ClusterName: !Ref ECSCluster
           ServiceName: !GetAtt ECSService.Name
