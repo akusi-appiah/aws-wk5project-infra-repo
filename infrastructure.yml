@@ -403,6 +403,7 @@ Resources:
       RoleARN: !GetAtt ApplicationAutoscalingRole.Arn
       MinCapacity: 1
       MaxCapacity: 10
+      DesiredCapacity: !Ref DesiredCount #confirm if we can have at least 2 running
 
   # -- Target Tracking Scaling Policy --
   ScalingPolicy:
@@ -443,6 +444,7 @@ Resources:
     DependsOn: [ECSService, BlueTg, GreenTg, AlbListener]
     Properties:
       ApplicationName: !Ref CodeDeployApplication
+      DeploymentGroupName: !Sub "${ECSAppName}-dg"
       ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
       DeploymentStyle:
         DeploymentType: BLUE_GREEN
@@ -473,33 +475,33 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/ecs/${ECSAppName}"
-      RetentionInDays: 14
+      RetentionInDays: 7
 
-  PipelineRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal: { Service: codepipeline.amazonaws.com }
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: CodePipelineFullAccess
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ecr:BatchGetImage
-                  - ecr:GetDownloadUrlForLayer
-                  - ecs:DescribeServices
-                  - ecs:UpdateService
-                  - codedeploy:CreateDeployment
-                  - iam:PassRole
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: '*'
+  # PipelineRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal: { Service: codepipeline.amazonaws.com }
+  #           Action: sts:AssumeRole
+  #     Policies:
+  #       - PolicyName: CodePipelineFullAccess
+  #         PolicyDocument:
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - ecr:BatchGetImage
+  #                 - ecr:GetDownloadUrlForLayer
+  #                 - ecs:DescribeServices
+  #                 - ecs:UpdateService
+  #                 - codedeploy:CreateDeployment
+  #                 - iam:PassRole
+  #                 - logs:CreateLogGroup
+  #                 - logs:CreateLogStream
+  #                 - logs:PutLogEvents
+  #               Resource: '*'
 
   # Pipeline:
   #   Condition: CreateAppResources
@@ -547,13 +549,16 @@ Outputs:
   S3BucketName:
     Description: Name of the application images bucket
     Value: !Ref AppS3Bucket
-  S3BucketArn:
-    Description: ARN of the application images bucket
-    Value: !GetAtt AppS3Bucket.Arn
-
-  DebugClusterName:
+  # S3BucketArn:
+  #   Description: ARN of the application images bucket
+  #   Value: !GetAtt AppS3Bucket.Arn
+  ArtifactsBucketName:
+    Value: !Ref ArtifactsBucket
+    Description: Name of the S3 bucket for deployment artifacts
+  DeploymentGroupName:
     Condition: CreateAppResources
-    Description: "ECS Cluster name"
-    Value: !Ref ECSCluster
+    Value: !Ref CodeDeployDeploymentGroup
+    Description: Name of the CodeDeploy deployment group
+
 
   
