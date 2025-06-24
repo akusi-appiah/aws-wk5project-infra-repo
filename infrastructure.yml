@@ -401,7 +401,7 @@ Resources:
       ScalableDimension: ecs:service:DesiredCount
       ResourceId: !Join ["/", ["service", !Ref ECSCluster, !GetAtt ECSService.Name]] 
       RoleARN: !GetAtt ApplicationAutoscalingRole.Arn
-      MinCapacity: 1
+      MinCapacity: 2
       MaxCapacity: 10
 
   # -- Target Tracking Scaling Policy --
