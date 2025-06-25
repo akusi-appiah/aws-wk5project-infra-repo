@@ -174,16 +174,6 @@ Resources:
       SecurityGroupIds: [ !Ref EndpointSG ]
       PrivateDnsEnabled: true
 
-    # --- ECR Repository (Private by default) ---
-  # ECRRepository:
-  #   Type: AWS::ECR::Repository
-  #   Properties:
-  #     RepositoryName: !Ref ECRRepoName
-  #     ImageScanningConfiguration:
-  #       ScanOnPush: true
-  #     # ImageTagMutability: IMMUTABLE
-
-
   # ALB & Security Groups
   AlbSG:
     Condition: CreateAppResources
