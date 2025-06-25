@@ -303,6 +303,7 @@ Resources:
                   - s3:GetObject
                   - s3:ListBucket
                   - s3:DeleteObject
+                  - s3:CreateBucket
                 Resource:
                   - !Sub arn:aws:s3:::${AppS3Bucket}
                   - !Sub arn:aws:s3:::${AppS3Bucket}/*
@@ -342,6 +343,8 @@ Resources:
           Environment:
             - Name: S3_BUCKET
               Value: !Ref AppS3Bucket
+            - Name: S3_REGION
+              Value: !Ref AWS::Region
 
   ECSService:
     Condition: CreateAppResources
