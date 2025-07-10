@@ -21,16 +21,50 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
+          aws-region: eu-central-1
+          mask-aws-account-id: no
 
-      - name: Deploy core infra
-        id: cf
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: igallery-infra
-          template: infrastructure.yml
-          capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
-          parameter-overrides: DeployApp=false,S3BucketName=${{ needs.deploy-core.outputs.bucket_name }}
+      - name: Check if CloudFormation stack exists
+        id: check-stack
+        run: |
+          if aws cloudformation describe-stacks --stack-name wk5-infrastructure &>/dev/null; then
+            echo "Stack exists"
+            echo "stack_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Stack does not exist"
+            echo "stack_exists=false" >> $GITHUB_OUTPUT
+          fi
+              
+      - name: Deploy CloudFormation stack
+        if: steps.check-stack.outputs.stack_exists == 'false'
+        run: |
+          aws cloudformation create-stack \
+            --stack-name wk5-infrastructure \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameters \
+            --tags Key=Project,Value=ImageGallery
+                
+          aws cloudformation wait stack-create-complete \
+            --stack-name wk5-infrastructure || \
+          (aws cloudformation describe-stack-events \
+            --stack-name wk5-infrastructure \
+            --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`]' \
+            --output table; exit 1)
+
+
+
+
+
+
+
+      # - name: Deploy core infra
+      #   id: cf
+      #   uses: aws-actions/aws-cloudformation-github-deploy@v1
+      #   with:
+      #     name: igallery-infra
+      #     template: infrastructure.yml
+      #     capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
+      #     parameter-overrides: DeployApp=false,S3BucketName=${{ needs.deploy-core.outputs.bucket_name }}
 
   # build-push-image:
   #   needs: deploy-core
