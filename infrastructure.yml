@@ -4,18 +4,18 @@ Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green d
 
 Parameters:
 #Conditional deployment flag
-  DeployApp:
-    Type: String
-    Default: "false"
-    AllowedValues: [ "true", "false" ]
-    Description: |
-      Set to "true" to deploy the application stack. Set to "false" to only create the infrastructure without deploying the app.
+  # DeployApp:
+  #   Type: String
+  #   Default: "false"
+  #   AllowedValues: [ "true", "false" ]
+  #   Description: |
+  #     Set to "true" to deploy the application stack. Set to "false" to only create the infrastructure without deploying the app.
 
-  ContainerImage:
-    Type: String
-    Default: "796973518232.dkr.ecr.eu-west-1.amazonaws.com/igallery-repo:latest"
-    Description: |
-      ECR image URI for your container. Update this to deploy a new version of your app.
+  # ContainerImage:
+  #   Type: String
+  #   Default: "796973518232.dkr.ecr.eu-west-1.amazonaws.com/igallery-repo:latest"
+  #   Description: |
+  #     ECR image URI for your container. Update this to deploy a new version of your app.
 
   # VPC and Subnet Configuration
   VpcCidr:  
@@ -47,14 +47,14 @@ Parameters:
 
   DesiredCount:
     Type: Number
-    Default: 2
+    Default: 0
 
   S3BucketName:
     Type: String
     Default: ""
 
-Conditions:
-  CreateAppResources: !Equals [!Ref DeployApp, "true"]
+# Conditions:
+#   CreateAppResources: !Equals [!Ref DeployApp, "true"]
   
 Resources:
   # --- Networking ---
@@ -176,7 +176,7 @@ Resources:
 
   # ALB & Security Groups
   AlbSG:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ALB SG
@@ -191,7 +191,7 @@ Resources:
           CidrIp: 0.0.0.0/0
 
   taskSG:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ECS Tasks SG
@@ -206,15 +206,19 @@ Resources:
           CidrIp: 0.0.0.0/0
 
   ALB:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
+    DependsOn: [ECSCluster,ECSService]
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: !Sub "${ECSAppName}-alb"
       Subnets: [ !Ref PublicSubnet1, !Ref PublicSubnet2 ]
       SecurityGroups: [ !Ref AlbSG ]
+      Scheme: internet-facing
+      Type: application
+      IpAddressType: ipv4
 
   BlueTg:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${ECSAppName}-blue"
@@ -223,11 +227,15 @@ Resources:
       TargetType: ip
       VpcId: !Ref VPC
       HealthCheckProtocol: HTTP
-      HealthCheckPath: /
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
       Matcher: { HttpCode: "200" }
 
   GreenTg:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${ECSAppName}-green"
@@ -236,11 +244,16 @@ Resources:
       TargetType: ip
       VpcId: !Ref VPC
       HealthCheckProtocol: HTTP
-      HealthCheckPath: /
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
       Matcher: { HttpCode: "200" }
 
   AlbListener:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
+    DependsOn: [BlueTg,GreenTg]
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ALB
@@ -265,16 +278,31 @@ Resources:
         Status: Enabled
     DeletionPolicy: Delete
 
+  #ECR Repository
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ECSAppName
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+
   # ECS Cluster & Task
   ECSCluster:  
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: igallery-app-cluster
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
 
+  # -- ECS Task Execution Role -
   TaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub ${ECSAppName}-ecs-task-execution-role-prod
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -305,7 +333,7 @@ Resources:
                 Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/${ECSAppName}:*"
 
   ECSTaskDef:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::ECS::TaskDefinition
     DependsOn: AppLogGroup
     Properties:
@@ -318,7 +346,7 @@ Resources:
       TaskRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: !Ref ECSAppName
-          Image: !Ref ContainerImage
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:latest
           Essential: true
           PortMappings:
             - ContainerPort: !Ref ContainerPort
@@ -335,11 +363,17 @@ Resources:
               Value: !Ref AppS3Bucket
             - Name: S3_REGION
               Value: !Ref AWS::Region
+          HealthCheck:
+            Command: [CMD-SHELL, exit 0"]
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
 
   ECSService:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::ECS::Service
-    DependsOn: AlbListener
+    DependsOn: [AlbListener,ESCTaskDef]
     Properties:
       ServiceName: igallery-app-service
       Cluster: !Ref ECSCluster
@@ -386,7 +420,7 @@ Resources:
 
   # -- Scalable Target Resource --
   ScalableTarget:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     DependsOn: ECSService
     Properties:
@@ -395,11 +429,11 @@ Resources:
       ResourceId: !Join ["/", ["service", !Ref ECSCluster, !GetAtt ECSService.Name]] 
       RoleARN: !GetAtt ApplicationAutoscalingRole.Arn
       MinCapacity: 2
-      MaxCapacity: 10
+      MaxCapacity: 4
 
   # -- Target Tracking Scaling Policy --
   ScalingPolicy:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
       PolicyName: cpu-target-tracking
@@ -416,6 +450,7 @@ Resources:
   CodeDeployServiceRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub codedeploy-${ECSAppName}-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -426,12 +461,13 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
 
   CodeDeployApplication:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
+    DependsOn: [ECSService]
     Type: AWS::CodeDeploy::Application
     Properties: { ComputePlatform: ECS, ApplicationName: !Ref ECSAppName }
 
   CodeDeployDeploymentGroup:
-    Condition: CreateAppResources
+    # Condition: CreateAppResources
     Type: AWS::CodeDeploy::DeploymentGroup
     DependsOn: [ECSService, BlueTg, GreenTg, AlbListener]
     Properties:
@@ -461,6 +497,18 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
+      BucketName: !Sub codedeploy-artifacts-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+
+  #CodeBuild Artifacts Bucket
+  CodeBuildBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub wk5buildsecbucket
+      VersioningConfiguration:
+        Status: Enabled
   
   AppLogGroup:
     Condition: CreateAppResources
@@ -469,11 +517,195 @@ Resources:
       LogGroupName: !Sub "/ecs/${ECSAppName}"
       RetentionInDays: 14
 
+
+ #Add Code Pipeline and Event Bridge Resources
+
+ #CodePipeline
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub codepipeline-${ECSAppName}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codepipeline.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: PipelinePermissions
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:DescribeImages
+                  - ecs:*
+                  - codedeploy:*
+                  - s3:*
+                  - codebuild:*
+                Resource: "*"
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codebuild.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ecs:DescribeServices
+                  - ecs:UpdateService
+                  - ecs:DescribeTaskDefinition
+                  - ecs:RegisterTaskDefinition
+                  - s3:*
+                Resource: "*"
+              - Effect: Allow
+                Action: ecs:DescribeClusters
+                Resource: !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ECSClusterName}
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: arn:aws:iam::796973518232:role/igallery-app-ecs-task-execution-prod
+                Condition:
+                  StringLike:
+                    iam:PassedToService: "ecs-tasks.amazonaws.com"
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub ${ECSAppName}-deployment
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactsBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: ECR_Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: ECR
+                Version: '1'
+              Configuration:
+                RepositoryName: !Ref ECRRepoName
+                ImageTag: latest
+              OutputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+
+        - Name: Build
+          Actions:
+          - Name: Build-ServiceUpdates
+            ActionTypeId:
+              Category: Build
+              Owner: AWS
+              Provider: CodeBuild
+              Version: '1'
+            Configuration:
+              ProjectName: !Ref ServiceBuilderProject
+            InputArtifacts:
+              - Name: SourceOutput
+            OutputArtifacts:
+              - Name: BuildOutput 
+            RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+            - Name: CodeDeploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CodeDeploy
+                Version: '1'
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Sub ${ECSAppName}-dg
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+
+  ServiceBuilderProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ECSAppName}-service-updater
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        EnvironmentVariables:
+          - Name: ECS_CLUSTER
+            Value: !Ref ECSCluster
+          - Name: ECS_SERVICE
+            Value: !GetAtt ECSService.Name
+          - Name: TASK_DEFINITION_FAMILY
+            Value: !Ref ECSAppName
+          - Name: CONTAINER_NAME
+            Value: !Ref ECSAppName
+          - Name: CONTAINER_PORT
+            Value: !Ref ContainerPort
+      Logs:
+        CloudWatchLogs:
+          GroupName: !GetAtt AppLogGroup.LogGroupName
+          StreamName: !Sub "codebuild/${ECSAppName}/build"
+          status: ENABLED
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: arn:aws:s3:::wk5buildsecbucket/buildsec-healthcheck.yaml
+
+ #EventBridge   
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Trigger pipeline on ECR image push
+      EventPattern:
+        source: ["aws.ecr"]
+        detail-type: ["ECR Image Action"]
+        detail:
+          action-type: ["PUSH"]
+          result: ["SUCCESS"]
+          repository-name: 
+            - !Ref ECRRepoName 
+          image-tag: ["latest"] 
+
+      Targets:
+        - Arn: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${PipelineName}
+          RoleArn: !GetAtt EventRole.Arn
+          Id: codepipeline-triggers
+
+  EventRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: events.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokePipeline
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: codepipeline:StartPipelineExecution
+                Resource: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${PipelineName}  
+
 Outputs:
   VpcId: { Value: !Ref VPC }
   PublicSubnets: { Value: !Join [ ',', [!Ref PublicSubnet1, !Ref PublicSubnet2] ] }
   PrivateSubnets: { Value: !Join [ ',', [!Ref PrivateSubnet1, !Ref PrivateSubnet2] ] }
-  LoadBalancerDNS: { Condition: CreateAppResources, Value: !GetAtt ALB.DNSName }
+  LoadBalancerDNS: { Value: !GetAtt ALB.DNSName }
   S3BucketName:
     Description: Name of the application images bucket
     Value: !Ref AppS3Bucket
@@ -481,7 +713,6 @@ Outputs:
     Value: !Ref ArtifactsBucket
     Description: Name of the S3 bucket for deployment artifacts
   DeploymentGroupName:
-    Condition: CreateAppResources
     Value: !Ref CodeDeployDeploymentGroup
     Description: Name of the CodeDeploy deployment group
 

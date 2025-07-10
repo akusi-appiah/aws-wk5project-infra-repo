@@ -32,109 +32,109 @@ jobs:
           capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
           parameter-overrides: DeployApp=false,S3BucketName=${{ needs.deploy-core.outputs.bucket_name }}
 
-  build-push-image:
-    needs: deploy-core
-    runs-on: ubuntu-latest
-    outputs:
-      image_uri: ${{ steps.set_image_uri.outputs.image_uri }}
-    steps:
-      - uses: actions/checkout@v4
+  # build-push-image:
+  #   needs: deploy-core
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     image_uri: ${{ steps.set_image_uri.outputs.image_uri }}
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: AWS Login
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
+  #     - name: AWS Login
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: eu-west-1
 
-      - name: Log in to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+  #     - name: Log in to ECR
+  #       id: login-ecr
+  #       uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Check or create ECR repository
-        id: ecr-repo
-        run: |
-          REPO_NAME=igallery-repo
-          # Check if repo exists
-          if aws ecr describe-repositories --repository-names $REPO_NAME --region eu-west-1 >/dev/null 2>&1; then
-            echo "Repository exists"
-            REPO_URI=$(aws ecr describe-repositories --repository-names $REPO_NAME --query 'repositories[0].repositoryUri' --output text)
-            echo "repo_uri=$REPO_URI" >> $GITHUB_OUTPUT
-          else
-            echo "Creating repository"
-            REPO_URI=$(aws ecr create-repository --repository-name $REPO_NAME --region eu-west-1 --query 'repository.repositoryUri' --output text)
-            echo "repo_uri=$REPO_URI" >> $GITHUB_OUTPUT
-          fi
-          echo "Repository URI: $REPO_URI"
+  #     - name: Check or create ECR repository
+  #       id: ecr-repo
+  #       run: |
+  #         REPO_NAME=igallery-repo
+  #         # Check if repo exists
+  #         if aws ecr describe-repositories --repository-names $REPO_NAME --region eu-west-1 >/dev/null 2>&1; then
+  #           echo "Repository exists"
+  #           REPO_URI=$(aws ecr describe-repositories --repository-names $REPO_NAME --query 'repositories[0].repositoryUri' --output text)
+  #           echo "repo_uri=$REPO_URI" >> $GITHUB_OUTPUT
+  #         else
+  #           echo "Creating repository"
+  #           REPO_URI=$(aws ecr create-repository --repository-name $REPO_NAME --region eu-west-1 --query 'repository.repositoryUri' --output text)
+  #           echo "repo_uri=$REPO_URI" >> $GITHUB_OUTPUT
+  #         fi
+  #         echo "Repository URI: $REPO_URI"
 
-      - name: Check if image exists
-        id: check-image
-        run: |
-          IMAGE_TAG=latest
-          if aws ecr describe-images --repository-name igallery-repo --image-ids imageTag=$IMAGE_TAG --region eu-west-1 >/dev/null 2>&1; then
-            echo "Image exists"
-            echo "image_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "Image does not exist"
-            echo "image_exists=false" >> $GITHUB_OUTPUT
-          fi
+  #     - name: Check if image exists
+  #       id: check-image
+  #       run: |
+  #         IMAGE_TAG=latest
+  #         if aws ecr describe-images --repository-name igallery-repo --image-ids imageTag=$IMAGE_TAG --region eu-west-1 >/dev/null 2>&1; then
+  #           echo "Image exists"
+  #           echo "image_exists=true" >> $GITHUB_OUTPUT
+  #         else
+  #           echo "Image does not exist"
+  #           echo "image_exists=false" >> $GITHUB_OUTPUT
+  #         fi
 
-      - name: Build & Push Placeholder
-        if: steps.check-image.outputs.image_exists == 'false'
-        run: |
-          IMAGE_URI="${{ steps.ecr-repo.outputs.repo_uri }}:latest"
-          echo "Building and pushing: $IMAGE_URI"
+  #     - name: Build & Push Placeholder
+  #       if: steps.check-image.outputs.image_exists == 'false'
+  #       run: |
+  #         IMAGE_URI="${{ steps.ecr-repo.outputs.repo_uri }}:latest"
+  #         echo "Building and pushing: $IMAGE_URI"
 
-          # Create minimal Node.js server that listens on port 3000
-          cat > server.js <<'EOF'
-          const http = require('http');
-          const server = http.createServer((req, res) => {
-            res.writeHead(200, {'Content-Type': 'text/html'});
-            res.end('<h1>Hello World</h1>');
-          });
-          server.listen(3000, '0.0.0.0', () => console.log('Placeholder running on port 3000'));
-          EOF
+  #         # Create minimal Node.js server that listens on port 3000
+  #         cat > server.js <<'EOF'
+  #         const http = require('http');
+  #         const server = http.createServer((req, res) => {
+  #           res.writeHead(200, {'Content-Type': 'text/html'});
+  #           res.end('<h1>Hello World</h1>');
+  #         });
+  #         server.listen(3000, '0.0.0.0', () => console.log('Placeholder running on port 3000'));
+  #         EOF
           
-          # Create Dockerfile
-          cat > Dockerfile <<EOF
-          FROM node:18-slim
-          WORKDIR /app
-          COPY server.js .
-          EXPOSE 3000
-          CMD ["node", "server.js"]
-          EOF
+  #         # Create Dockerfile
+  #         cat > Dockerfile <<EOF
+  #         FROM node:18-slim
+  #         WORKDIR /app
+  #         COPY server.js .
+  #         EXPOSE 3000
+  #         CMD ["node", "server.js"]
+  #         EOF
 
-          docker build -t igallery-repo:latest .
-          docker tag igallery-repo:latest "$IMAGE_URI"
-          docker push "$IMAGE_URI"
+  #         docker build -t igallery-repo:latest .
+  #         docker tag igallery-repo:latest "$IMAGE_URI"
+  #         docker push "$IMAGE_URI"
 
-      - name: Set image URI output
-        id: set_image_uri
-        run: |
-          IMAGE_URI="${{ steps.ecr-repo.outputs.repo_uri }}:latest"
-          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
-          echo "Final image URI: $IMAGE_URI"
+  #     - name: Set image URI output
+  #       id: set_image_uri
+  #       run: |
+  #         IMAGE_URI="${{ steps.ecr-repo.outputs.repo_uri }}:latest"
+  #         echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+  #         echo "Final image URI: $IMAGE_URI"
 
-  deploy-app:
-    needs: [deploy-core, build-push-image]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: AWS Login
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
+  # deploy-app:
+  #   needs: [deploy-core, build-push-image]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: AWS Login
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: eu-west-1
 
-      - name: Verify Image URI
-        run: |
-          echo "Using ContainerImage: ${{ needs.build-push-image.outputs.image_uri }}"
+  #     - name: Verify Image URI
+  #       run: |
+  #         echo "Using ContainerImage: ${{ needs.build-push-image.outputs.image_uri }}"
 
-      - name: Deploy App Resources
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: igallery-infra
-          template: infrastructure.yml
-          capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
-          parameter-overrides: DeployApp=true,ContainerImage=${{ needs.build-push-image.outputs.image_uri }}
+  #     - name: Deploy App Resources
+  #       uses: aws-actions/aws-cloudformation-github-deploy@v1
+  #       with:
+  #         name: igallery-infra
+  #         template: infrastructure.yml
+  #         capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
+  #         parameter-overrides: DeployApp=true,ContainerImage=${{ needs.build-push-image.outputs.image_uri }}
