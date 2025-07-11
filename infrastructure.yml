@@ -373,7 +373,7 @@ Resources:
   ECSService:
     # Condition: CreateAppResources
     Type: AWS::ECS::Service
-    # DependsOn: [AlbListener,ECSTaskDef]
+    DependsOn: [AlbListener,ECSTaskDef]
     Properties:
       ServiceName: igallery-app-service
       Cluster: !Ref ECSCluster
