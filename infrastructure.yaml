@@ -656,7 +656,7 @@ Resources:
             Value: !Ref ECSAppName
           - Name: CONTAINER_PORT
             Value: !Ref ContainerPort
-      Logs:
+      LogsConfig:
         CloudWatchLogs:
           GroupName: !Sub "/codebuild/${ECSAppName}"
           StreamName: !Sub "codebuild/${ECSAppName}/build"
