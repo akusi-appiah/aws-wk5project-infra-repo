@@ -524,7 +524,7 @@ Resources:
   PipelineRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub codepipeline-${ECSAppName}
+      # RoleName: !Sub codepipeline1-${ECSAppName}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
