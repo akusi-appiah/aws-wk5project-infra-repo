@@ -658,10 +658,10 @@ Resources:
             Value: !Ref ContainerPort
       Logs:
         CloudWatchLogs:
-          GroupName: !sub "/codebuild/${ECSAppName}"
+          GroupName: !Sub "/codebuild/${ECSAppName}"
           StreamName: !Sub "codebuild/${ECSAppName}/build"
-          retentionInDays: 14
-          status: ENABLED
+          Status: ENABLED
+          RetentionInDays: 14
       Source:
         Type: CODEPIPELINE
         BuildSpec: arn:aws:s3:::wk5buildsecbucket/buildsec-healthcheck.yaml
