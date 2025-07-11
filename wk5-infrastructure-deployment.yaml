@@ -1,0 +1,13 @@
+template-file-path: infrastructure.yaml
+parameters:
+  VpcCidr: 10.0.0.0/16
+  AvailabilityZones: eu-central-1a,eu-central-1b
+  ContainerPort: '3000'
+  PrivateSubnetCIDRs: 10.0.101.0/24,10.0.102.0/24
+  DesiredCount: '0'
+  S3BucketName: ''
+  ECRRepoName: igallery-repo
+  PublicSubnetCIDRs: 10.0.1.0/24,10.0.2.0/24
+  ECSAppName: igallery-app
+tags:
+  Project: ImageGallery

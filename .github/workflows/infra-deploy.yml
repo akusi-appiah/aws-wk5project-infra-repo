@@ -40,7 +40,7 @@ jobs:
         run: |
           aws cloudformation create-stack \
             --stack-name wk5-infrastructure \
-            --template-body file://infrastructure.yml \
+            --template-body file://infrastructure.yaml \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameters \
             --tags Key=Project,Value=ImageGallery
