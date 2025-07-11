@@ -578,6 +578,13 @@ Resources:
                   StringLike:
                     iam:PassedToService: "ecs-tasks.amazonaws.com"
 
+  #CodeBuild Log Group
+  CodeBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/codebuild/${ECSAppName}"
+      RetentionInDays: 14                  
+
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     DependsOn: [CodeDeployDeploymentGroup]
@@ -658,10 +665,11 @@ Resources:
             Value: !Ref ContainerPort
       LogsConfig:
         CloudWatchLogs:
-          GroupName: !Sub "/codebuild/${ECSAppName}"
-          StreamName: !Sub "codebuild/${ECSAppName}/build"
           Status: ENABLED
-          RetentionInDays: 14
+          GroupName: !Sub "/aws/codebuild/${ECSAppName}"
+          StreamName: !Sub ${ECSAppName}/build"
+          
+
       Source:
         Type: CODEPIPELINE
         BuildSpec: arn:aws:s3:::wk5buildsecbucket/buildsec-healthcheck.yaml
