@@ -207,7 +207,7 @@ Resources:
 
   ALB:
     # Condition: CreateAppResources
-    DependsOn: [ECSCluster,ECSService]
+    # DependsOn: [ECSCluster,ECSService]
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: !Sub "${ECSAppName}-alb"
@@ -373,7 +373,7 @@ Resources:
   ECSService:
     # Condition: CreateAppResources
     Type: AWS::ECS::Service
-    DependsOn: [AlbListener,ECSTaskDef]
+    # DependsOn: [AlbListener,ECSTaskDef]
     Properties:
       ServiceName: igallery-app-service
       Cluster: !Ref ECSCluster
@@ -462,14 +462,14 @@ Resources:
 
   CodeDeployApplication:
     # Condition: CreateAppResources
-    DependsOn: [ECSService]
+    # DependsOn: [ECSService]
     Type: AWS::CodeDeploy::Application
     Properties: { ComputePlatform: ECS, ApplicationName: !Ref ECSAppName }
 
   CodeDeployDeploymentGroup:
     # Condition: CreateAppResources
     Type: AWS::CodeDeploy::DeploymentGroup
-    DependsOn: [ECSService, BlueTg, GreenTg, AlbListener]
+    DependsOn: [ECSService, AlbListener]
     Properties:
       ApplicationName: !Ref CodeDeployApplication
       DeploymentGroupName: !Sub "${ECSAppName}-dg"
