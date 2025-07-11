@@ -569,7 +569,7 @@ Resources:
                 Resource: "*"
               - Effect: Allow
                 Action: ecs:DescribeClusters
-                Resource: !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ECSClusterName}
+                Resource: !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/igallery-app-cluster
               - Effect: Allow
                 Action:
                   - iam:PassRole
