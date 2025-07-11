@@ -3,20 +3,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Full infra stack: VPC, endpoints, ALB, ECS + Fargate, Blue/Green deploy via gitHub actions.'
 
 Parameters:
-#Conditional deployment flag
-  # DeployApp:
-  #   Type: String
-  #   Default: "false"
-  #   AllowedValues: [ "true", "false" ]
-  #   Description: |
-  #     Set to "true" to deploy the application stack. Set to "false" to only create the infrastructure without deploying the app.
-
-  # ContainerImage:
-  #   Type: String
-  #   Default: "796973518232.dkr.ecr.eu-west-1.amazonaws.com/igallery-repo:latest"
-  #   Description: |
-  #     ECR image URI for your container. Update this to deploy a new version of your app.
-
   # VPC and Subnet Configuration
   VpcCidr:  
     Type: String
@@ -53,8 +39,6 @@ Parameters:
     Type: String
     Default: ""
 
-# Conditions:
-#   CreateAppResources: !Equals [!Ref DeployApp, "true"]
   
 Resources:
   # --- Networking ---
@@ -176,7 +160,6 @@ Resources:
 
   # ALB & Security Groups
   AlbSG:
-    # Condition: CreateAppResources
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ALB SG
@@ -191,7 +174,6 @@ Resources:
           CidrIp: 0.0.0.0/0
 
   taskSG:
-    # Condition: CreateAppResources
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ECS Tasks SG
@@ -206,8 +188,6 @@ Resources:
           CidrIp: 0.0.0.0/0
 
   ALB:
-    # Condition: CreateAppResources
-    # DependsOn: [ECSCluster,ECSService]
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: !Sub "${ECSAppName}-alb"
@@ -218,7 +198,6 @@ Resources:
       IpAddressType: ipv4
 
   BlueTg:
-    # Condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${ECSAppName}-blue"
@@ -235,7 +214,6 @@ Resources:
       Matcher: { HttpCode: "200" }
 
   GreenTg:
-    # Condition: CreateAppResources
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${ECSAppName}-green"
@@ -252,7 +230,6 @@ Resources:
       Matcher: { HttpCode: "200" }
 
   AlbListener:
-    # Condition: CreateAppResources
     DependsOn: [BlueTg,GreenTg]
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -282,7 +259,7 @@ Resources:
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: !Ref ECSAppName
+      RepositoryName: !Ref ECRRepoName
       ImageScanningConfiguration:
         ScanOnPush: true
       EncryptionConfiguration:
@@ -290,7 +267,6 @@ Resources:
 
   # ECS Cluster & Task
   ECSCluster:  
-    # Condition: CreateAppResources
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: igallery-app-cluster
@@ -333,7 +309,6 @@ Resources:
                 Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/${ECSAppName}:*"
 
   ECSTaskDef:
-    # Condition: CreateAppResources
     Type: AWS::ECS::TaskDefinition
     DependsOn: AppLogGroup
     Properties:
@@ -371,7 +346,6 @@ Resources:
             StartPeriod: 60
 
   ECSService:
-    # Condition: CreateAppResources
     Type: AWS::ECS::Service
     DependsOn: [AlbListener,ECSTaskDef]
     Properties:
@@ -420,7 +394,6 @@ Resources:
 
   # -- Scalable Target Resource --
   ScalableTarget:
-    # Condition: CreateAppResources
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     DependsOn: ECSService
     Properties:
@@ -433,7 +406,6 @@ Resources:
 
   # -- Target Tracking Scaling Policy --
   ScalingPolicy:
-    # Condition: CreateAppResources
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
       PolicyName: cpu-target-tracking
@@ -461,13 +433,10 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
 
   CodeDeployApplication:
-    # Condition: CreateAppResources
-    # DependsOn: [ECSService]
     Type: AWS::CodeDeploy::Application
     Properties: { ComputePlatform: ECS, ApplicationName: !Ref ECSAppName }
 
   CodeDeployDeploymentGroup:
-    # Condition: CreateAppResources
     Type: AWS::CodeDeploy::DeploymentGroup
     DependsOn: [ECSService, AlbListener]
     Properties:
@@ -511,7 +480,6 @@ Resources:
         Status: Enabled
   
   AppLogGroup:
-    # Condition: CreateAppResources
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/ecs/${ECSAppName}"
@@ -524,7 +492,6 @@ Resources:
   PipelineRole:
     Type: AWS::IAM::Role
     Properties:
-      # RoleName: !Sub codepipeline1-${ECSAppName}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
