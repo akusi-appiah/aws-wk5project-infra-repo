@@ -658,8 +658,9 @@ Resources:
             Value: !Ref ContainerPort
       Logs:
         CloudWatchLogs:
-          GroupName: !GetAtt AppLogGroup.LogGroupName
+          GroupName: !sub /aws/codebuild/${ECSAppName}
           StreamName: !Sub "codebuild/${ECSAppName}/build"
+          retentionInDays: 14
           status: ENABLED
       Source:
         Type: CODEPIPELINE
